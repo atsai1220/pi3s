@@ -1,0 +1,6 @@
+---
+- name: Copy Kubernetes Dashboard Helm Chart
+  copy:
+    src: helm-dashboard.yaml
+    dest: /var/lib/rancher/k3s/server/manifests
+    mode: '0777'

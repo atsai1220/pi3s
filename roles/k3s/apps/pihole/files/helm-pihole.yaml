@@ -1,0 +1,61 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pihole
+---
+apiVersion: helm.cattle.io/v1
+kind: HelmChart
+metadata:
+  name: pihole
+  namespace: kube-system
+spec:
+  chart: pihole
+  repo: https://mojo2600.github.io/pihole-kubernetes/
+  version: 2.5.8
+  targetNamespace: pihole
+  valuesContent: |-
+    persistentVolumeClaim:
+      enabled: true
+      storageClass: local-path
+    serviceTCP:
+      type: ClusterIP
+    serviceUDP:
+      type: ClusterIP
+    resources:
+      limits:
+        cpu: 200m
+        memory: 256Mi
+      requests:
+        cpu: 100m
+        memory: 128Mi
+    # If using in the real world, set up admin.existingSecret instead.
+    adminPassword: admin
+    hostNetwork: true
+    privileged: true
+    webHttp: 8000
+    webHttps: 8443
+    extraEnvVars:
+      ServerIP: 10.0.0.2
+      TZ: 'America/Los_Angeles'
+    ingress:
+      enabled: true
+      path: /
+      hosts:
+        # virtualHost (default value is pi.hole) will be appended to the hosts
+        - pihole.local
+    serviceWeb:
+      https:
+        enabled: false
+    DNS1: "8.8.8.8"
+    DNS2: "8.8.4.4"
+    virtualHost: "pihole.local"
+    dnsmasq:
+      customDnsEntries:
+        - address=/pihole.local/10.0.0.2
+        - address=/longhorn.local/10.0.0.2
+        - address=/dashboard.local/10.0.0.2
+    extraEnvVars:
+      REV_SERVER: true
+      REV_SERVER_TARGET: 10.0.0.1
+      REV_SERVER_CIDR: 10.0.0.0/24

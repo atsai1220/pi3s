@@ -1,0 +1,6 @@
+---
+- name: Copy PiHole Helm Chart
+  copy:
+    src: helm-pihole.yaml
+    dest: /var/lib/rancher/k3s/server/manifests
+    mode: '0777'

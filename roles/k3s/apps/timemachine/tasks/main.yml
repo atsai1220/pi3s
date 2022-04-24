@@ -1,0 +1,7 @@
+---
+# https://github.com/mbentley/docker-timemachine
+- name: Copy Time Machine Manifest
+  copy:
+    src: timemachine.yaml
+    dest: /var/lib/rancher/k3s/server/manifests
+    mode: '0777'

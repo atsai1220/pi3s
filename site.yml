@@ -1,0 +1,80 @@
+# Run with
+# ansible-playbook site.yml -i inventory/my-cluster/hosts.ini
+---
+
+- name: Configure Raspberrypis
+  hosts: k3s_cluster
+  become: yes
+  become_user: root
+  tasks:
+    - name: "Update apt"
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: "Apt upgrade"
+      apt:
+        upgrade: dist
+
+    - name: "Install packages"
+      apt:
+        pkg:
+        - ansible
+        - python3-docker
+        - vim
+
+    - name: "Copy throttle.sh"
+      copy:
+        src: throttle.sh
+        dest: /home/pi/throttle.sh
+        mode: '0777'
+        
+- name: "Install pip"
+  hosts: k3s_cluster
+  become: yes
+  # vars:
+  #   pip_install_packages:
+  #     - name: docker
+  roles:
+      - geerlingguy.pip
+
+- name: "Docker playbook"
+  hosts: k3s_cluster
+  become: yes
+  vars:
+    docker_install_compose: false
+    docker_users:
+      - pi
+      - root
+  roles:
+      - geerlingguy.docker_arm
+
+- hosts: k3s_cluster
+  gather_facts: yes
+  become: yes
+  roles:
+    - role: prereq
+    - role: download
+    - role: raspberrypi
+
+- hosts: master
+  become: yes
+  roles:
+    - role: k3s/master
+
+- hosts: node
+  become: yes
+  roles:
+    - role: k3s/node
+
+- hosts: master
+  become: yes
+  roles:
+    - role: k3s/apps/dashboard
+    # Need to mount storage
+    # 1. mkdir /mnt/buffalo
+    # 2. blkid
+    # 3. `/etc/fstab` with `PARTUUID=[partition uuid] /media/storage exfat defaults,noatime,nodiratime 0 2`
+    - role: k3s/apps/longhorn
+    - role: k3s/apps/pihole
+    - role: k3s/apps/timemachine
